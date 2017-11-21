@@ -16,6 +16,7 @@
 
 use std::collections::LinkedList;
 
+#[derive(Clone, Copy)]
 enum CourseType {
     Corriculum,
     Exkurs,
@@ -74,20 +75,20 @@ fn get_weeks() -> Option<Vec<Week>> {
     Some(weeks)
 }
 
-fn get_students() -> Option<LinkedList<Student>> {
+fn get_students() -> LinkedList<Student> {
     let mut students = LinkedList::new();
     for i in 1..26 {
         students.push_back({ Student { number: i } });
     }
-    Some(students)
+    students
 }
 
-fn get_curriculum_groups(students: LinkedList<Student>) -> LinkedList<Group> {
+fn get_curriculum_groups() -> LinkedList<Group> {
     let mut curriculum_groups = LinkedList::new();
-    let mut students = students.into_iter();
+    let mut students = get_students().into_iter();
     for i in 0..4 {
         for j in 0..4 {
-            let group = Group {
+            let groups = Group {
                 groupType: CourseType::Corriculum,
                 participants: {
                     let mut participants = LinkedList::new();
@@ -96,19 +97,64 @@ fn get_curriculum_groups(students: LinkedList<Student>) -> LinkedList<Group> {
                     participants
                 },
             };
-            curriculum_groups.push_back(group);
+            curriculum_groups.push_back(groups);
         }
     }
     curriculum_groups
 }
 
+fn course_is_today(course_type: CourseType, week: &Week) -> bool {
+    true
+}
+
+fn student_is_occupied(student: Student, course_type: CourseType, day: &Day) -> bool {
+    true
+}
+
+fn group_is_occupied(group: Group, course_type: CourseType, day: &Day) -> bool {
+    for student in group.participants {
+        if student_is_occupied(student, course_type, day) {
+            return false;
+        }
+    }
+    true
+}
+
+fn distribute_course(course_type: CourseType, week: &Week, day: &Day) {
+    if course_is_today(course_type, week) {
+        match course_type {
+            CourseType::Corriculum => {
+                let groups = get_curriculum_groups();
+                for group in groups {
+                    if group_is_occupied(group, course_type, day) {
+                        continue;
+                    } else {
+                        //TODO: add to something
+                        break;
+                    }
+                }
+            }
+            CourseType::Exkurs => unimplemented!(),
+            CourseType::Zahnersatz => unimplemented!(),
+            CourseType::Zahnerhalt => unimplemented!(),
+        }
+    }
+}
+
+fn generate_output() {}
+
 fn main() {
     println!("Hello");
     let weeks = get_weeks().expect("Unable to parse weeks");
-    for currentWeek in weeks {
-        for dayIndex in 0..5 {
-            let currentDay = currentWeek.days[dayIndex];
+    for current_week in weeks {
+        for day_index in 0..5 {
+            let current_day = &current_week.days[day_index];
+            distribute_course(CourseType::Corriculum, &current_week, current_day);
+            distribute_course(CourseType::Exkurs, &current_week, current_day);
+            distribute_course(CourseType::Zahnersatz, &current_week, current_day);
+            distribute_course(CourseType::Zahnerhalt, &current_week, current_day);
         }
     }
+    generate_output();
     println!("And bye.");
 }
