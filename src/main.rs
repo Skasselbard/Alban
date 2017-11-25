@@ -49,9 +49,30 @@ struct Group {
     participants: LinkedList<Student>,
 }
 
+trait Occupation {
+    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool;
+}
+
 impl Day {
     fn hasCourse(&self) -> bool {
         self.courses.is_empty()
+    }
+}
+
+impl Occupation for Group {
+    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool {
+        for student in &(self.participants) {
+            if student.is_occupied(course_type, day) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl Occupation for Student {
+    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool {
+        false
     }
 }
 
@@ -103,36 +124,36 @@ fn get_curriculum_groups() -> LinkedList<Group> {
     curriculum_groups
 }
 
+fn get_exkurs_groups() -> LinkedList<Group> {
+    let groups: LinkedList<Group> = LinkedList::new();
+    groups
+}
+
 fn course_is_today(course_type: CourseType, week: &Week) -> bool {
     true
 }
 
-fn student_is_occupied(student: Student, course_type: CourseType, day: &Day) -> bool {
-    true
-}
-
-fn group_is_occupied(group: Group, course_type: CourseType, day: &Day) -> bool {
-    for student in group.participants {
-        if student_is_occupied(student, course_type, day) {
-            return false;
-        }
-    }
-    true
-}
-
-fn distribute_course(course_type: CourseType, week: &Week, day: &Day) {
+fn distribute_course<T: Occupation>(
+    course_type: CourseType,
+    week: &Week,
+    day: &Day,
+    participants: &mut LinkedList<T>,
+) {
     if course_is_today(course_type, week) {
         match course_type {
             CourseType::Corriculum => {
-                let groups = get_curriculum_groups();
-                for group in groups {
-                    if group_is_occupied(group, course_type, day) {
-                        continue;
+                let mut splitter = 0;
+                for group in participants.iter() {
+                    if group.is_occupied(course_type, day) {
+                        splitter = splitter + 1;
                     } else {
-                        //TODO: add to something
                         break;
                     }
                 }
+                let mut rest = participants.split_off(splitter);
+                rest.push_back(participants.pop_back().unwrap());
+                rest.append(participants);
+                participants.append(&mut rest);
             }
             CourseType::Exkurs => unimplemented!(),
             CourseType::Zahnersatz => unimplemented!(),
@@ -146,13 +167,36 @@ fn generate_output() {}
 fn main() {
     println!("Hello");
     let weeks = get_weeks().expect("Unable to parse weeks");
+    let mut curriculum_groups = get_curriculum_groups();
+    let mut exkurs_groups = get_exkurs_groups();
+    let mut students = get_students();
     for current_week in weeks {
         for day_index in 0..5 {
             let current_day = &current_week.days[day_index];
-            distribute_course(CourseType::Corriculum, &current_week, current_day);
-            distribute_course(CourseType::Exkurs, &current_week, current_day);
-            distribute_course(CourseType::Zahnersatz, &current_week, current_day);
-            distribute_course(CourseType::Zahnerhalt, &current_week, current_day);
+            distribute_course(
+                CourseType::Corriculum,
+                &current_week,
+                current_day,
+                &mut curriculum_groups,
+            );
+            distribute_course(
+                CourseType::Exkurs,
+                &current_week,
+                current_day,
+                &mut exkurs_groups,
+            );
+            distribute_course(
+                CourseType::Zahnersatz,
+                &current_week,
+                current_day,
+                &mut students,
+            );
+            distribute_course(
+                CourseType::Zahnerhalt,
+                &current_week,
+                current_day,
+                &mut students,
+            );
         }
     }
     generate_output();
