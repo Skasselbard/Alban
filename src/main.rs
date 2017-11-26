@@ -14,67 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod types;
+mod implementations;
+
 use std::collections::LinkedList;
-
-#[derive(Clone, Copy)]
-enum CourseType {
-    Corriculum,
-    Exkurs,
-    Zahnersatz,
-    Zahnerhalt,
-}
-
-///
-struct Week {
-    number: u64,
-    days: [Day; 5], //Mo-Fr
-}
-
-#[derive(Default)]
-struct Day {
-    courses: LinkedList<Course>,
-}
-
-struct Course {
-    beginning: u8,
-    courseType: CourseType,
-}
-
-struct Student {
-    number: u64,
-}
-
-struct Group {
-    groupType: CourseType,
-    participants: LinkedList<Student>,
-}
-
-trait Occupation {
-    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool;
-}
-
-impl Day {
-    fn hasCourse(&self) -> bool {
-        self.courses.is_empty()
-    }
-}
-
-impl Occupation for Group {
-    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool {
-        for student in &(self.participants) {
-            if student.is_occupied(course_type, day) {
-                return false;
-            }
-        }
-        true
-    }
-}
-
-impl Occupation for Student {
-    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool {
-        false
-    }
-}
+use types::*;
 
 fn get_weeks() -> Option<Vec<Week>> {
     let mut weeks = Vec::with_capacity(20);
@@ -98,7 +42,7 @@ fn get_weeks() -> Option<Vec<Week>> {
 
 fn get_students() -> LinkedList<Student> {
     let mut students = LinkedList::new();
-    for i in 1..26 {
+    for i in 1..27 {
         students.push_back({ Student { number: i } });
     }
     students
@@ -107,8 +51,8 @@ fn get_students() -> LinkedList<Student> {
 fn get_curriculum_groups() -> LinkedList<Group> {
     let mut curriculum_groups = LinkedList::new();
     let mut students = get_students().into_iter();
-    for i in 0..4 {
-        for j in 0..4 {
+    for i in 0..3 {
+        for j in 0..3 {
             let groups = Group {
                 groupType: CourseType::Corriculum,
                 participants: {
@@ -179,24 +123,24 @@ fn main() {
                 current_day,
                 &mut curriculum_groups,
             );
-            distribute_course(
-                CourseType::Exkurs,
-                &current_week,
-                current_day,
-                &mut exkurs_groups,
-            );
-            distribute_course(
-                CourseType::Zahnersatz,
-                &current_week,
-                current_day,
-                &mut students,
-            );
-            distribute_course(
-                CourseType::Zahnerhalt,
-                &current_week,
-                current_day,
-                &mut students,
-            );
+            // distribute_course(
+            //     CourseType::Exkurs,
+            //     &current_week,
+            //     current_day,
+            //     &mut exkurs_groups,
+            // );
+            // distribute_course(
+            //     CourseType::Zahnersatz,
+            //     &current_week,
+            //     current_day,
+            //     &mut students,
+            // );
+            // distribute_course(
+            //     CourseType::Zahnerhalt,
+            //     &current_week,
+            //     current_day,
+            //     &mut students,
+            // );
         }
     }
     generate_output();
