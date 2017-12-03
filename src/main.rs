@@ -19,6 +19,9 @@ mod implementations;
 
 use std::collections::LinkedList;
 use types::*;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::ops::Deref;
 
 fn get_weeks() -> Option<Vec<Week>> {
     let mut weeks = Vec::with_capacity(20);
@@ -27,9 +30,51 @@ fn get_weeks() -> Option<Vec<Week>> {
             number: i,
             days: {
                 let mut ret: [Day; 5] = Default::default();
-                for i in 0..4 {
+                for i in 0..5 {
                     ret[i] = Day {
-                        courses: LinkedList::new(),
+                        //TODO: add courses conditionally
+                        courses: {
+                            RefCell::new({
+                                let mut courses = LinkedList::new();
+                                courses.push_back(
+                                    Course{
+                                        beginning: 7,
+                                        course_type: CourseType::Curriculum, 
+                                        participants: RefCell::new(LinkedList::new())
+                                    });
+                                    courses.push_back(
+                                    Course{
+                                        beginning: 7,
+                                        course_type: CourseType::Exkurs, 
+                                        participants: RefCell::new(LinkedList::new())
+                                    });
+                                    courses.push_back(
+                                    Course{
+                                        beginning: 7,
+                                        course_type: CourseType::Zahnerhalt, 
+                                        participants: RefCell::new(LinkedList::new())
+                                    });
+                                    courses.push_back(
+                                    Course{
+                                        beginning: 7,
+                                        course_type: CourseType::Zahnersatz, 
+                                        participants: RefCell::new(LinkedList::new())
+                                    });
+                                    courses.push_back(
+                                    Course{
+                                        beginning: 16,
+                                        course_type: CourseType::Zahnerhalt, 
+                                        participants: RefCell::new(LinkedList::new())
+                                    });
+                                    courses.push_back(
+                                    Course{
+                                        beginning: 16,
+                                        course_type: CourseType::Zahnersatz, 
+                                        participants: RefCell::new(LinkedList::new())
+                                    });
+                                    courses
+                            })
+                        },
                     }
                 }
                 ret
@@ -40,26 +85,29 @@ fn get_weeks() -> Option<Vec<Week>> {
     Some(weeks)
 }
 
-fn get_students() -> LinkedList<Student> {
+fn get_students<'a>() -> LinkedList<Rc<Student>> {
     let mut students = LinkedList::new();
     for i in 1..27 {
-        students.push_back({ Student { number: i } });
+        let student = Rc::new(Student { number: i });
+        students.push_back(student);
     }
     students
 }
 
-fn get_curriculum_groups() -> LinkedList<Group> {
+fn get_curriculum_groups<'a>(students: &mut LinkedList<Rc<Student>>) -> LinkedList<Group> {
     let mut curriculum_groups = LinkedList::new();
-    let mut students = get_students().into_iter();
+    let mut students_iterator = students.iter_mut();
     for i in 0..3 {
         for j in 0..3 {
             let groups = Group {
-                groupType: CourseType::Corriculum,
+                group_type: CourseType::Curriculum,
                 participants: {
                     let mut participants = LinkedList::new();
-                    participants.push_back(students.next().expect("no students left"));
-                    participants.push_back(students.next().expect("no students left"));
-                    participants
+                    for k in 0..2{
+                        let student = students_iterator.next().expect("no students left");
+                        participants.push_back((*student).clone());
+                    }
+                    RefCell::new(participants)
                 },
             };
             curriculum_groups.push_back(groups);
@@ -68,7 +116,7 @@ fn get_curriculum_groups() -> LinkedList<Group> {
     curriculum_groups
 }
 
-fn get_exkurs_groups() -> LinkedList<Group> {
+fn get_exkurs_groups<'a>() -> LinkedList<Group> {
     let groups: LinkedList<Group> = LinkedList::new();
     groups
 }
@@ -77,15 +125,17 @@ fn course_is_today(course_type: CourseType, week: &Week) -> bool {
     true
 }
 
-fn distribute_course<T: Occupation>(
+fn distribute_course<'a, 'b>(
     course_type: CourseType,
     week: &Week,
-    day: &Day,
-    participants: &mut LinkedList<T>,
+    day: &'a Day,
+    participants: &'b mut LinkedList<Group>,
 ) {
     if course_is_today(course_type, week) {
         match course_type {
-            CourseType::Corriculum => {
+            CourseType::Curriculum => {
+                let courses = day.courses.borrow();
+                let course = courses.iter().find(|ref course|course.course_type == CourseType::Curriculum).unwrap();
                 let mut splitter = 0;
                 for group in participants.iter() {
                     if group.is_occupied(course_type, day) {
@@ -94,10 +144,18 @@ fn distribute_course<T: Occupation>(
                         break;
                     }
                 }
-                let mut rest = participants.split_off(splitter);
-                rest.push_back(participants.pop_back().unwrap());
-                rest.append(participants);
-                participants.append(&mut rest);
+                let mut rest = participants.split_off(splitter);// the due to occupation skipped part 
+                participants.push_back(rest.pop_back().unwrap());// move the relevant group to the back
+                rest.append(participants);// reunite the splitted lists
+                participants.append(&mut rest);// move back to the longer living variable
+                //println!("{:?}", participants);
+                let group = participants.back().unwrap();// get relevant group
+                //println!("{:?}", group);
+                let mut course_participants = course.participants.borrow_mut();
+                for student in group.participants.borrow_mut().iter_mut() {
+                    course_participants.push_back(student.clone());
+                }
+                //println!("{:?}", course);
             }
             CourseType::Exkurs => unimplemented!(),
             CourseType::Zahnersatz => unimplemented!(),
@@ -106,19 +164,44 @@ fn distribute_course<T: Occupation>(
     }
 }
 
-fn generate_output() {}
+fn generate_output<'a>(weeks: &'a Vec<Week>) {
+    for current_week in weeks {
+        println!("KW {}", current_week.number);
+        println!("\t\tMontag\t\tDienstag\tMittwoch\tDonnerstag\tFreitag");
+        for course_type in CourseType::variants() {
+            print!("{}", course_type);
+            print!("\t");
+            for day_index in 0..5 {
+                let current_day = &current_week.days[day_index];
+                for course in current_day.courses.borrow().iter() {
+                    print!("{}", StudentPrinter(&course.participants.borrow()));
+                }
+                print!("\t\t");
+            }
+            println!("");
+        }
+        println!("");
+        println!("");
+    }
+}
 
 fn main() {
-    println!("Hello");
+    println!("---start---");
     let weeks = get_weeks().expect("Unable to parse weeks");
-    let mut curriculum_groups = get_curriculum_groups();
-    let mut exkurs_groups = get_exkurs_groups();
+    println!("---parsed weeks---", );
     let mut students = get_students();
-    for current_week in weeks {
+    println!("---parsed students---", );
+    let mut curriculum_groups = get_curriculum_groups(&mut students);
+    println!("---parsed curriculum groups---", );
+    let  exkurs_groups = get_exkurs_groups();
+    println!("---parsed exkurs groups---", );
+    for current_week in weeks.iter() {
+        println!("---process week {}---", current_week.number);
         for day_index in 0..5 {
+            println!("---process day {}---", day_index);
             let current_day = &current_week.days[day_index];
             distribute_course(
-                CourseType::Corriculum,
+                CourseType::Curriculum,
                 &current_week,
                 current_day,
                 &mut curriculum_groups,
@@ -143,6 +226,5 @@ fn main() {
             // );
         }
     }
-    generate_output();
-    println!("And bye.");
+    generate_output(&weeks);
 }
