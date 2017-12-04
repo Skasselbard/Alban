@@ -17,6 +17,9 @@
 use types::*;
 use std::fmt;
 use std::slice::Iter;
+use std::rc::Rc;
+use std::ops::Deref;
+//use std::borrow::Borrow;
 
 impl<'a> Day {
     fn has_course(&self) -> bool {
@@ -38,6 +41,18 @@ impl<'a, 'b> Occupation<'a> for Group {
 impl<'a> Occupation<'a> for Student {
     fn is_occupied(&self, course: &Course, day: &Day) -> bool {
         //TODO: implement is occupied
+        for ref course in day.courses
+            .borrow()
+            .iter()
+            .filter(|ref x| x.beginning == course.beginning)
+        //all courses with the same starting time
+        {
+            for student in course.participants.borrow_mut().iter_mut() {
+                if Rc::deref(student) == self {
+                    return true;
+                }
+            }
+        }
         false
     }
 }

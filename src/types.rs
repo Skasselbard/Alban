@@ -45,7 +45,7 @@ pub struct Course {
     pub participants: RefCell<LinkedList<Rc<Student>>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Student {
     pub number: u64,
 }
