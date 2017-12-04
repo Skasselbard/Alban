@@ -1,4 +1,4 @@
-// Alban is a program should distribute dentistry students to their courses
+// Alban is a program to distribute dentistry students to their courses
 // Copyright (C) 2017 Tom Meyer
 
 // This program is free software: you can redistribute it and/or modify
