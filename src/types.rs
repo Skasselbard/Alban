@@ -60,5 +60,5 @@ pub struct Group {
 }
 
 pub trait Occupation<'a> {
-    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool;
+    fn is_occupied(&self, course: &Course, day: &Day) -> bool;
 }

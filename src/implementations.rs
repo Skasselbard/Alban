@@ -25,9 +25,9 @@ impl<'a> Day {
 }
 
 impl<'a, 'b> Occupation<'a> for Group {
-    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool {
+    fn is_occupied(&self, course: &Course, day: &Day) -> bool {
         for student in self.participants.borrow().clone() {
-            if student.is_occupied(course_type, day) {
+            if student.is_occupied(course, day) {
                 return true;
             }
         }
@@ -36,7 +36,7 @@ impl<'a, 'b> Occupation<'a> for Group {
 }
 
 impl<'a> Occupation<'a> for Student {
-    fn is_occupied(&self, course_type: CourseType, day: &Day) -> bool {
+    fn is_occupied(&self, course: &Course, day: &Day) -> bool {
         //TODO: implement is occupied
         false
     }
