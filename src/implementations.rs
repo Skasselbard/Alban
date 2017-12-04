@@ -1,4 +1,18 @@
-//mod types;
+// Alban is a program should distribute dentistry students to their courses
+// Copyright (C) 2017 Tom Meyer
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use types::*;
 use std::fmt;
@@ -44,7 +58,7 @@ impl fmt::Display for CourseType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             CourseType::Curriculum => write!(f, "Curriculum"),
-            CourseType::Exkurs => write!(f, "Exkurs__"),
+            CourseType::Exkurs => write!(f, "Exkurs____"),
             CourseType::Zahnerhalt => write!(f, "Zahnerhalt"),
             CourseType::Zahnersatz => write!(f, "Zahnersatz"),
         }

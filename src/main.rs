@@ -145,17 +145,14 @@ fn distribute_course<'a, 'b>(
                     }
                 }
                 let mut rest = participants.split_off(splitter);// the due to occupation skipped part 
-                participants.push_back(rest.pop_back().unwrap());// move the relevant group to the back
-                rest.append(participants);// reunite the splitted lists
-                participants.append(&mut rest);// move back to the longer living variable
-                //println!("{:?}", participants);
-                let group = participants.back().unwrap();// get relevant group
-                //println!("{:?}", group);
+                let group = rest.pop_front().unwrap();// get relevant group
+                rest.push_back(group);// move the relevant group to the back
+                participants.append(&mut rest);// reunite
+                let group = participants.back().unwrap();// get relevant group (old group was consumed b pushing)
                 let mut course_participants = course.participants.borrow_mut();
                 for student in group.participants.borrow_mut().iter_mut() {
                     course_participants.push_back(student.clone());
                 }
-                //println!("{:?}", course);
             }
             CourseType::Exkurs => unimplemented!(),
             CourseType::Zahnersatz => unimplemented!(),
@@ -167,14 +164,16 @@ fn distribute_course<'a, 'b>(
 fn generate_output<'a>(weeks: &'a Vec<Week>) {
     for current_week in weeks {
         println!("KW {}", current_week.number);
-        println!("\t\tMontag\t\tDienstag\tMittwoch\tDonnerstag\tFreitag");
+        println!("_____________Montag_____________Dienstag________Mittwoch________Donnerstag______Freitag");
         for course_type in CourseType::variants() {
             print!("{}", course_type);
-            print!("\t");
+            print!("___");
             for day_index in 0..5 {
                 let current_day = &current_week.days[day_index];
                 for course in current_day.courses.borrow().iter() {
-                    print!("{}", StudentPrinter(&course.participants.borrow()));
+                    if course.course_type == *course_type{
+                        print!("{}", StudentPrinter(&course.participants.borrow()));
+                    }
                 }
                 print!("\t\t");
             }
