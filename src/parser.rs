@@ -19,7 +19,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use types::*;
-use implementations::*;
 
 pub fn get_weeks() -> Option<Vec<Week>> {
     let mut weeks = Vec::with_capacity(20);
@@ -141,7 +140,7 @@ pub fn get_zahnersatz_groups<'a>(
                 RefCell::new(participants)
             },
         };
-        if position <= students.len() / (2 as usize) {
+        if position < students.len() / (2 as usize) {
             first_half.push_back(group);
         } else {
             second_half.push_back(group)

@@ -23,6 +23,7 @@ use types::*;
 use parser::*;
 
 fn course_is_today(course_type: CourseType, week: &Week) -> bool {
+    //TODO: implement
     true
 }
 
@@ -81,36 +82,76 @@ fn distribute_courses<'a, 'b>(
             },
             CourseType::Zahnersatz => {
                 let courses = day.courses.borrow();
-                let course = courses.iter().find(|ref course|course.course_type == CourseType::Zahnersatz).unwrap();
+                let course = courses.iter().find(
+                    |ref course|
+                    course.course_type == CourseType::Zahnersatz &&
+                    course.beginning == 7
+                    ).unwrap();
+                distribute_course(&course, day, participants, (get_zahnersatz_seat_count()/2 as u8));
+                let course = courses.iter().find(
+                    |ref course|
+                    course.course_type == CourseType::Zahnersatz &&
+                    course.beginning == 16
+                    ).unwrap();
                 distribute_course(&course, day, participants, (get_zahnersatz_seat_count()/2 as u8));
             },
             CourseType::Zahnerhalt => {
                 let courses = day.courses.borrow();
-                let course = courses.iter().find(|ref course|course.course_type == CourseType::Zahnerhalt).unwrap();
+                let course = courses.iter().find(
+                    |ref course|
+                    course.course_type == CourseType::Zahnerhalt &&
+                    course.beginning == 7
+                    ).unwrap();
+                distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
+                let course = courses.iter().find(
+                    |ref course|
+                    course.course_type == CourseType::Zahnerhalt &&
+                    course.beginning == 16
+                    ).unwrap();
                 distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
             },
         }
     }
 }
 
+fn print_course(week: &Week, course_type: CourseType, beginning:u8){
+    print!("{} {}   ", course_type, beginning);
+    for day_index in 0..5 {
+        let current_day = &week.days[day_index];
+        for course in current_day.courses.borrow().iter() {
+            if course.course_type == course_type && course.beginning == beginning{
+                print!("{}", StudentPrinter(&course.participants.borrow()));
+            }
+        }
+        print!("\t\t");
+    }
+    println!("");
+}
+
 fn generate_output<'a>(weeks: &'a Vec<Week>) {
     for current_week in weeks {
         println!("KW {}", current_week.number);
-        println!("_____________Montag_____________Dienstag________Mittwoch________Donnerstag______Freitag");
-        for course_type in CourseType::variants() {
-            print!("{}", course_type);
-            print!("___");
-            for day_index in 0..5 {
-                let current_day = &current_week.days[day_index];
-                for course in current_day.courses.borrow().iter() {
-                    if course.course_type == *course_type{
-                        print!("{}", StudentPrinter(&course.participants.borrow()));
-                    }
-                }
-                print!("\t\t");
-            }
-            println!("");
-        }
+        println!("             Montag             Dienstag        Mittwoch        Donnerstag      Freitag");
+        print_course(&current_week, CourseType::Curriculum, 7);
+        print_course(&current_week, CourseType::Exkurs, 7);
+        print_course(&current_week, CourseType::Zahnerhalt, 7);
+        print_course(&current_week, CourseType::Zahnerhalt, 16);
+        print_course(&current_week, CourseType::Zahnersatz, 7);
+        print_course(&current_week, CourseType::Zahnersatz, 16);
+        // for course_type in CourseType::variants() {
+        //     print!("{}", course_type);
+        //     print!("   ");
+        //     for day_index in 0..5 {
+        //         let current_day = &current_week.days[day_index];
+        //         for course in current_day.courses.borrow().iter() {
+        //             if course.course_type == *course_type{
+        //                 print!("{}", StudentPrinter(&course.participants.borrow()));
+        //             }
+        //         }
+        //         print!("\t\t");
+        //     }
+        //     println!("");
+        // }
         println!("");
         println!("");
     }
@@ -122,13 +163,29 @@ fn main() {
     println!("---parsed weeks---", );
     let students = get_students();
     println!("---parsed students---", );
+    for student in students.iter(){
+        println!("{}", student)
+    }
     let mut curriculum_groups = get_curriculum_groups(&students);
     println!("---parsed curriculum groups---", );
+    for group in curriculum_groups.iter(){
+        println!("{}", group)
+    }
     let mut exkurs_groups = get_exkurs_groups(&students);
     println!("---parsed exkurs groups---", );
+    for group in exkurs_groups.iter(){
+        println!("{}", group)
+    }
     let mut zahnersatz_groups = get_zahnersatz_groups(&students);
     println!("---parsed Zahnersatz groups---", );
-    println!("{:?}", zahnersatz_groups);
+    println!("first half:");
+    for group in zahnersatz_groups.0.iter(){
+        println!("{}", group)
+    }
+    println!("second half:");
+    for group in zahnersatz_groups.1.iter(){
+        println!("{}", group)
+    }
     let mut zahnerhalt_groups = get_zahnerhalt_groups(&students);
     println!("---parsed Zahnerhalt groups---", );
     for current_week in weeks.iter() {

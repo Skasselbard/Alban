@@ -22,8 +22,8 @@ use std::cell::RefCell;
 pub enum CourseType {
     Curriculum,
     Exkurs,
-    Zahnersatz,
     Zahnerhalt,
+    Zahnersatz,
 }
 
 ///
