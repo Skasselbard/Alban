@@ -53,10 +53,11 @@ fn distribute_course(
         };
         rest.push_back(group);// move the relevant group to the back
         participants.append(&mut rest);// reunite
-        let group = participants.back().unwrap();// get relevant group (old group was consumed b pushing)
-        let mut course_participants = course.participants.borrow_mut();
-        for student in group.participants.borrow_mut().iter_mut() {
-            course_participants.push_back(student.clone());
+        if let Some(group) = participants.back(){// get relevant group (old group was consumed b pushing)
+            let mut course_participants = course.participants.borrow_mut();
+            for student in group.participants.borrow_mut().iter_mut() {
+                course_participants.push_back(student.clone());
+            }
         }
     }
     space_count

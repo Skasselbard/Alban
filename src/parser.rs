@@ -94,8 +94,9 @@ pub fn get_curriculum_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedLi
             participants: {
                 let mut participants = LinkedList::new();
                 for _ in 0..5 {
-                    let student = students_iterator.next().expect("no students left").clone();
-                    participants.push_back(student);
+                    if let Some(student) = students_iterator.next() {
+                        participants.push_back(student.clone());
+                    }
                 }
                 RefCell::new(participants)
             },
@@ -114,8 +115,9 @@ pub fn get_exkurs_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<G
             participants: {
                 let mut participants = LinkedList::new();
                 for _ in 0..2 {
-                    let student = students_iterator.next().expect("no students left").clone();
-                    participants.push_back(student);
+                    if let Some(student) = students_iterator.next() {
+                        participants.push_back(student.clone());
+                    }
                 }
                 RefCell::new(participants)
             },

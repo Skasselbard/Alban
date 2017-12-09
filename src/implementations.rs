@@ -16,15 +16,9 @@
 
 use types::*;
 use std::fmt;
-use std::slice::Iter;
 use std::rc::Rc;
 use std::ops::Deref;
 
-impl<'a> Day {
-    fn has_course(&self) -> bool {
-        self.courses.borrow().is_empty()
-    }
-}
 
 impl<'a, 'b> Occupation<'a> for Group {
     fn is_occupied(&self, course: &Course, day: &Day) -> bool {
@@ -52,18 +46,6 @@ impl<'a> Occupation<'a> for Student {
             }
         }
         false
-    }
-}
-
-impl CourseType {
-    pub fn variants() -> Iter<'static, CourseType> {
-        static VARIANTS: &'static [CourseType] = &[
-            CourseType::Curriculum,
-            CourseType::Exkurs,
-            CourseType::Zahnerhalt,
-            CourseType::Zahnersatz,
-        ];
-        VARIANTS.iter()
     }
 }
 
