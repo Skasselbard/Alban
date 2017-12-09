@@ -132,27 +132,13 @@ fn print_course(week: &Week, course_type: CourseType, beginning:u8){
 fn generate_output<'a>(weeks: &'a Vec<Week>) {
     for current_week in weeks {
         println!("KW {}", current_week.number);
-        println!("             Montag             Dienstag        Mittwoch        Donnerstag      Freitag");
+        println!("               Montag           Dienstag        Mittwoch        Donnerstag      Freitag");
         print_course(&current_week, CourseType::Curriculum, 7);
         print_course(&current_week, CourseType::Exkurs, 7);
         print_course(&current_week, CourseType::Zahnerhalt, 7);
         print_course(&current_week, CourseType::Zahnerhalt, 16);
         print_course(&current_week, CourseType::Zahnersatz, 7);
         print_course(&current_week, CourseType::Zahnersatz, 16);
-        // for course_type in CourseType::variants() {
-        //     print!("{}", course_type);
-        //     print!("   ");
-        //     for day_index in 0..5 {
-        //         let current_day = &current_week.days[day_index];
-        //         for course in current_day.courses.borrow().iter() {
-        //             if course.course_type == *course_type{
-        //                 print!("{}", StudentPrinter(&course.participants.borrow()));
-        //             }
-        //         }
-        //         print!("\t\t");
-        //     }
-        //     println!("");
-        // }
         println!("");
         println!("");
     }
