@@ -96,12 +96,12 @@ fn get_students<'a>() -> LinkedList<Rc<Student>> {
 fn get_curriculum_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<Group> {
     let mut groups = LinkedList::new();
     let mut students_iterator = students.iter();
-    for j in 0..5 {
+    for _ in 0..5 {
         let group = Group {
             group_type: CourseType::Curriculum,
             participants: {
                 let mut participants = LinkedList::new();
-                for k in 0..5{
+                for _ in 0..5{
                     let student = students_iterator.next().expect("no students left").clone();
                     participants.push_back(student);
                 }
@@ -116,12 +116,12 @@ fn get_curriculum_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<G
 fn get_exkurs_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<Group> {
     let mut groups = LinkedList::new();
     let mut students_iterator = students.iter();
-        for j in 0..13 {
+        for _ in 0..13 {
             let group = Group {
-                group_type: CourseType::Curriculum,
+                group_type: CourseType::Exkurs,
                 participants: {
                     let mut participants = LinkedList::new();
-                    for k in 0..2{
+                    for _ in 0..2{
                         let student = students_iterator.next().expect("no students left").clone();
                         participants.push_back(student);
                     }
@@ -133,32 +133,92 @@ fn get_exkurs_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<Group
     groups
 }
 
+fn get_zahnersatz_groups<'a>(students: &LinkedList<Rc<Student>>) 
+-> (LinkedList<Group>,LinkedList<Group>) {
+    let mut first_half = LinkedList::new();
+    let mut second_half = LinkedList::new();
+    let mut position = 0;
+    for student in students.iter() {
+        let group = Group {
+            group_type: CourseType::Zahnerhalt,
+            participants: {
+                let mut participants = LinkedList::new();
+                participants.push_back(student.clone());
+                RefCell::new(participants)
+            },
+        };
+        if position <= students.len()/(2 as usize){
+        first_half.push_back(group);
+        }else {
+            second_half.push_back(group)
+        }
+        position+=1;
+    }
+    (first_half,second_half)
+}
+
+fn get_zahnerhalt_groups<'a>(students: &LinkedList<Rc<Student>>) 
+-> LinkedList<Group> {
+    let mut groups = LinkedList::new();
+    for student in students.iter() {
+        let group = Group {
+            group_type: CourseType::Zahnersatz,
+            participants: {
+                let mut participants = LinkedList::new();
+                participants.push_back(student.clone());
+                RefCell::new(participants)
+            },
+        };
+        groups.push_back(group);
+    }
+    groups
+}
+
+fn get_zahnerhalt_seat_count() -> u8{
+    11
+}
+
+fn get_zahnersatz_seat_count() -> u8{
+    10
+}
+
 fn course_is_today(course_type: CourseType, week: &Week) -> bool {
     true
 }
 
+
+/// returns the left space (seats)
 fn distribute_course(
     course: &Course,
     day: & Day,
     participants: & mut LinkedList<Group>,
-){
-    let mut splitter = 0;
-    for ref group in participants.iter() {
-        if group.is_occupied(course, day) {
-            splitter = splitter + 1;
-        } else {
-            break;
+    space_count: u8
+)->u8{
+    let mut space_count = space_count;
+    while space_count > 0{
+        space_count -= 1;
+        let mut splitter = 0;
+        for ref group in participants.iter() {
+            if group.is_occupied(course, day) {
+                splitter = splitter + 1;
+            } else {
+                break;
+            }
+        }
+        let mut rest = participants.split_off(splitter);// the due to occupation skipped part 
+        let group = match rest.pop_front(){// get relevant group
+            Some(group) => group,
+            None => continue
+        };
+        rest.push_back(group);// move the relevant group to the back
+        participants.append(&mut rest);// reunite
+        let group = participants.back().unwrap();// get relevant group (old group was consumed b pushing)
+        let mut course_participants = course.participants.borrow_mut();
+        for student in group.participants.borrow_mut().iter_mut() {
+            course_participants.push_back(student.clone());
         }
     }
-    let mut rest = participants.split_off(splitter);// the due to occupation skipped part 
-    let group = rest.pop_front().unwrap();// get relevant group
-    rest.push_back(group);// move the relevant group to the back
-    participants.append(&mut rest);// reunite
-    let group = participants.back().unwrap();// get relevant group (old group was consumed b pushing)
-    let mut course_participants = course.participants.borrow_mut();
-    for student in group.participants.borrow_mut().iter_mut() {
-        course_participants.push_back(student.clone());
-    }
+    space_count
 }
 
 fn distribute_courses<'a, 'b>(
@@ -172,22 +232,22 @@ fn distribute_courses<'a, 'b>(
             CourseType::Curriculum => {
                 let courses = day.courses.borrow();
                 let course = courses.iter().find(|ref course|course.course_type == CourseType::Curriculum).unwrap();
-                distribute_course(&course, day, participants);
+                distribute_course(&course, day, participants, 1);
             },
             CourseType::Exkurs => {
                 let courses = day.courses.borrow();
                 let course = courses.iter().find(|ref course|course.course_type == CourseType::Exkurs).unwrap();
-                distribute_course(&course, day, participants);
+                distribute_course(&course, day, participants, 1);
             },
             CourseType::Zahnersatz => {
                 let courses = day.courses.borrow();
                 let course = courses.iter().find(|ref course|course.course_type == CourseType::Zahnersatz).unwrap();
-                distribute_course(&course, day, participants);
+                distribute_course(&course, day, participants, (get_zahnersatz_seat_count()/2 as u8));
             },
             CourseType::Zahnerhalt => {
                 let courses = day.courses.borrow();
                 let course = courses.iter().find(|ref course|course.course_type == CourseType::Zahnerhalt).unwrap();
-                distribute_course(&course, day, participants);
+                distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
             },
         }
     }
@@ -220,12 +280,17 @@ fn main() {
     println!("---start---");
     let weeks = get_weeks().expect("Unable to parse weeks");
     println!("---parsed weeks---", );
-    let mut students = get_students();
+    let students = get_students();
     println!("---parsed students---", );
     let mut curriculum_groups = get_curriculum_groups(&students);
     println!("---parsed curriculum groups---", );
     let mut exkurs_groups = get_exkurs_groups(&students);
     println!("---parsed exkurs groups---", );
+    let mut zahnersatz_groups = get_zahnersatz_groups(&students);
+    println!("---parsed Zahnersatz groups---", );
+    println!("{:?}", zahnersatz_groups);
+    let mut zahnerhalt_groups = get_zahnerhalt_groups(&students);
+    println!("---parsed Zahnerhalt groups---", );
     for current_week in weeks.iter() {
         println!("---process week {}---", current_week.number);
         for day_index in 0..5 {
@@ -243,18 +308,24 @@ fn main() {
                 current_day,
                 &mut exkurs_groups,
             );
-            // distribute_courses(
-            //     CourseType::Zahnersatz,
-            //     &current_week,
-            //     current_day,
-            //     &mut students,
-            // );
-            // distribute_courses(
-            //     CourseType::Zahnerhalt,
-            //     &current_week,
-            //     current_day,
-            //     &mut students,
-            // );
+            distribute_courses(
+                CourseType::Zahnersatz,
+                &current_week,
+                current_day,
+                &mut zahnersatz_groups.0,
+            );
+            distribute_courses(
+                CourseType::Zahnersatz,
+                &current_week,
+                current_day,
+                &mut zahnersatz_groups.1,
+            );
+            distribute_courses(
+                CourseType::Zahnerhalt,
+                &current_week,
+                current_day,
+                &mut zahnerhalt_groups,
+            );
         }
     }
     generate_output(&weeks);
