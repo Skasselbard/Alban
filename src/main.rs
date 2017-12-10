@@ -17,6 +17,9 @@
 #[macro_use]
 extern crate serde_derive;
 
+extern crate serde;
+extern crate serde_json;
+
 mod types;
 mod implementations;
 mod parser;
@@ -151,19 +154,20 @@ fn main() {
     println!("---start---");
     let input = parse();
     println!("---parsed json file---");
-    let weeks = get_weeks().expect("Unable to parse weeks");
+    println!("{}", serde_json::to_string_pretty(&input).unwrap());
+    let weeks = get_weeks(&input);
     println!("---parsed weeks---", );
     let students = get_students(&input);
     println!("---parsed students---", );
     for student in students.iter(){
         println!("{}", student)
     }
-    let mut curriculum_groups = get_curriculum_groups(&students);
+    let mut curriculum_groups = get_curriculum_groups(&input, &students);
     println!("---parsed curriculum groups---", );
     for group in curriculum_groups.iter(){
         println!("{}", group)
     }
-    let mut exkurs_groups = get_exkurs_groups(&students);
+    let mut exkurs_groups = get_exkurs_groups(&input, &students);
     println!("---parsed exkurs groups---", );
     for group in exkurs_groups.iter(){
         println!("{}", group)

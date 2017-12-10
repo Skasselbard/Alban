@@ -14,40 +14,49 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-extern crate serde;
 extern crate serde_json;
+
 
 use std::collections::LinkedList;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fs::File;
 use std::error::Error;
+use serde_json::{Map, Value};
+use serde_json::error::Category;
 
 use types::*;
 
-#[derive(Deserialize, Debug, Default)]
-#[allow(non_snake_case)]
-pub struct JsonData {
-    studentenAnzahl: u8,
-}
-
 pub fn parse() -> JsonData {
     match File::open("./input.json") {
-        Err(message) => {
-            panic!("Unable to open json file: {}", message.description());
+        Err(error) => {
+            panic!("Unable to open json file: {}", error.description());
         }
         Ok(file) => match serde_json::from_reader(file) {
-            Err(message) => {
-                panic!("Failed to parse json file: {}", message.description());
+            Err(error) => {
+                println!("{}", error.description());
+                println!("line: {}, column {}", error.line(), error.column());
+                match error.classify() {
+                    Category::Io => {println!("IOError: unable to read stream")}
+                    Category::Syntax => {println!("SyntaxError: file has malformed JSON. Did you miss or add brackets, collons etc?")}
+                    Category::Data => {println!("DataError: parsed type does not match the expected type. Did you miss or add \"'s or confused arrays and objects?\nIf this error occurs on the last line, you might have misspelled a key?")}
+                    Category::Eof => {println!("EOFError: premature end of file")}
+                }
+                panic!("Failed to parse json file");
             }
             Ok(data) => data,
         },
     }
 }
 
-pub fn get_weeks() -> Option<Vec<Week>> {
+pub fn get_weeks(parsed_data: &JsonData) -> Vec<Week> {
     let mut weeks = Vec::with_capacity(20);
-    for i in 1..14 {
+    let start = parsed_data.wochen.kwAnfang;
+    let end = parsed_data.wochen.kwEnde + 1;
+    if start > end {
+        panic!("first week is after the last week");
+    }
+    for i in start..end {
         let week = Week {
             number: i,
             days: {
@@ -98,30 +107,38 @@ pub fn get_weeks() -> Option<Vec<Week>> {
         };
         weeks.push(week);
     }
-    Some(weeks)
+    weeks
 }
 
 pub fn get_students<'a>(parsed_data: &JsonData) -> LinkedList<Rc<Student>> {
     let student_count = parsed_data.studentenAnzahl + 1;
     let mut students = LinkedList::new();
-    for i in 1..student_count as u64 {
+    for i in 1..student_count {
         let student = Rc::new(Student { number: i });
         students.push_back(student);
     }
     students
 }
 
-pub fn get_curriculum_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<Group> {
+pub fn get_curriculum_groups<'a>(
+    parsed_data: &JsonData,
+    students: &LinkedList<Rc<Student>>
+    )
+-> LinkedList<Group> {
+    let parsed_groups = &parsed_data.curriculumGruppen;
     let mut groups = LinkedList::new();
     let mut students_iterator = students.iter();
-    for _ in 0..5 {
+    for parsed_group in parsed_groups{
         let group = Group {
             group_type: CourseType::Curriculum,
             participants: {
                 let mut participants = LinkedList::new();
-                for _ in 0..5 {
-                    if let Some(student) = students_iterator.next() {
-                        participants.push_back(student.clone());
+                for student_number in parsed_group {
+                    for student in students{
+                        if student.number == *student_number{
+                            participants.push_back(student.clone());
+                            break;
+                        }
                     }
                 }
                 RefCell::new(participants)
@@ -132,17 +149,24 @@ pub fn get_curriculum_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedLi
     groups
 }
 
-pub fn get_exkurs_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<Group> {
+pub fn get_exkurs_groups<'a>(
+    parsed_data: &JsonData,
+    students: &LinkedList<Rc<Student>>
+    )
+-> LinkedList<Group> {
+    let parsed_groups = &parsed_data.exkursGruppen;
     let mut groups = LinkedList::new();
-    let mut students_iterator = students.iter();
-    for _ in 0..13 {
+    for parsed_group in parsed_groups{
         let group = Group {
             group_type: CourseType::Exkurs,
             participants: {
                 let mut participants = LinkedList::new();
-                for _ in 0..2 {
-                    if let Some(student) = students_iterator.next() {
-                        participants.push_back(student.clone());
+                for student_number in parsed_group {
+                    for student in students{
+                        if student.number == *student_number{
+                            participants.push_back(student.clone());
+                            break;
+                        }
                     }
                 }
                 RefCell::new(participants)
