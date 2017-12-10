@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#[macro_use]
+extern crate serde_derive;
+
 mod types;
 mod implementations;
 mod parser;
@@ -146,9 +149,11 @@ fn generate_output<'a>(weeks: &'a Vec<Week>) {
 
 fn main() {
     println!("---start---");
+    let input = parse();
+    println!("---parsed json file---");
     let weeks = get_weeks().expect("Unable to parse weeks");
     println!("---parsed weeks---", );
-    let students = get_students();
+    let students = get_students(&input);
     println!("---parsed students---", );
     for student in students.iter(){
         println!("{}", student)

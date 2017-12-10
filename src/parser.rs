@@ -14,11 +14,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+extern crate serde;
+extern crate serde_json;
+
 use std::collections::LinkedList;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fs::File;
+use std::error::Error;
 
 use types::*;
+
+#[derive(Deserialize, Debug, Default)]
+#[allow(non_snake_case)]
+pub struct JsonData {
+    studentenAnzahl: u8,
+}
+
+pub fn parse() -> JsonData {
+    match File::open("./input.json") {
+        Err(message) => {
+            panic!("Unable to open json file: {}", message.description());
+        }
+        Ok(file) => match serde_json::from_reader(file) {
+            Err(message) => {
+                panic!("Failed to parse json file: {}", message.description());
+            }
+            Ok(data) => data,
+        },
+    }
+}
 
 pub fn get_weeks() -> Option<Vec<Week>> {
     let mut weeks = Vec::with_capacity(20);
@@ -76,9 +101,10 @@ pub fn get_weeks() -> Option<Vec<Week>> {
     Some(weeks)
 }
 
-pub fn get_students<'a>() -> LinkedList<Rc<Student>> {
+pub fn get_students<'a>(parsed_data: &JsonData) -> LinkedList<Rc<Student>> {
+    let student_count = parsed_data.studentenAnzahl + 1;
     let mut students = LinkedList::new();
-    for i in 1..27 {
+    for i in 1..student_count as u64 {
         let student = Rc::new(Student { number: i });
         students.push_back(student);
     }
