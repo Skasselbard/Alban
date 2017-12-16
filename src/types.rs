@@ -68,6 +68,7 @@ pub trait Occupation<'a> {
 pub struct JsonData {
     pub studentenAnzahl: u64,
     pub wochen: JsonWeeks,
+    pub feiertage: Vec<JsonHoliday>,
     pub exkursGruppen: Vec<Vec<u64>>,
     pub curriculumGruppen: Vec<Vec<u64>>,
 }
@@ -77,4 +78,11 @@ pub struct JsonData {
 pub struct JsonWeeks {
     pub kwAnfang: u64,
     pub kwEnde: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[allow(non_snake_case)]
+pub struct JsonHoliday {
+    pub woche: u64,
+    pub tage: Vec<u64>,
 }

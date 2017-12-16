@@ -53,7 +53,7 @@ impl fmt::Display for CourseType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             CourseType::Curriculum => write!(f, "Curriculum"),
-            CourseType::Exkurs => write!(f, "Exkurs____"),
+            CourseType::Exkurs => write!(f, "Exkurs    "),
             CourseType::Zahnerhalt => write!(f, "Zahnerhalt"),
             CourseType::Zahnersatz => write!(f, "Zahnersatz"),
         }
@@ -62,15 +62,31 @@ impl fmt::Display for CourseType {
 
 impl fmt::Display for Student {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{},", self.number)
+        let mut result = Ok(());
+        if self.number < 10 {
+            result = write!(f, " ");
+        }
+        if let Ok(()) = result {
+            result = write!(f, "{},", self.number)
+        }
+        result
     }
 }
 
 impl<'a> fmt::Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = Ok(());
-        for ref student in self.participants.borrow().iter() {
-            result = write!(f, "{},", student)
+        let participants = self.participants.borrow();
+        let mut participants_iterator = participants.iter();
+        for _ in 0..14 {
+            if let Some(student) = participants_iterator.next() {
+                result = write!(f, "{}", student);
+            } else {
+                result = write!(f, "   ");
+            }
+            if let Err(_) = result {
+                break;
+            }
         }
         result
     }
@@ -79,8 +95,17 @@ impl<'a> fmt::Display for Group {
 impl<'a> fmt::Display for StudentPrinter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = Ok(());
-        for ref student in self.0.iter() {
-            result = write!(f, "{},", student.number)
+        let participants = self.0;
+        let mut participants_iterator = participants.iter();
+        for _ in 0..14 {
+            if let Some(student) = participants_iterator.next() {
+                result = write!(f, "{}", student);
+            } else {
+                result = write!(f, "   ");
+            }
+            if let Err(_) = result {
+                break;
+            }
         }
         result
     }
