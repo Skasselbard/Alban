@@ -27,11 +27,15 @@ mod parser;
 use std::collections::LinkedList;
 use std::fs::File;
 use std::io::Write;
+use std::io;
 use std::error::Error;
+use std::result::Result;
 
 use types::*;
 use parser::*;
 
+
+/// returns true if an entry exists for the given course type in the given day
 fn course_is_today(course_type: CourseType, day: &Day) -> bool {
     day.courses
         .borrow()
@@ -39,7 +43,7 @@ fn course_is_today(course_type: CourseType, day: &Day) -> bool {
         .any(|course| course.course_type == course_type)
 }
 
-
+/// subfunction of distribute_courses
 /// returns the left space (seats)
 fn distribute_course(
     course: &Course,
@@ -67,7 +71,7 @@ fn distribute_course(
         rest.push_back(group); // move the relevant group to the back
         participants.append(&mut rest); // reunite
         if let Some(group) = participants.back() {
-            // get relevant group (old group was consumed b pushing)
+            // get relevant group (old group was consumed by pushing)
             let mut course_participants = course.participants.borrow_mut();
             for student in group.participants.borrow_mut().iter_mut() {
                 course_participants.push_back(student.clone());
@@ -77,6 +81,9 @@ fn distribute_course(
     space_count
 }
 
+/// Takes a list of Groups and distributes them among the course.
+/// The distributed groups will be moved to the end of the given group list, so
+/// that the next time, they will be distributed with the least priority
 fn distribute_courses<'a, 'b>(
     course_type: CourseType,
     day: &'a Day,
@@ -148,35 +155,44 @@ fn distribute_courses<'a, 'b>(
     }
 }
 
-fn print_course<T: Write>(file: &mut T, week: &Week, course_type: CourseType, beginning: u8) {
-    write!(file, "{} {}   ", course_type, beginning);
+fn print_course<T: Write>(
+    file: &mut T,
+    week: &Week,
+    course_type: CourseType,
+    beginning: u8,
+) -> Result<(), io::Error> {
+    write!(file, "{} {}   ", course_type, beginning)?;
     for day_index in 0..5 {
         let current_day = &week.days[day_index];
         for course in current_day.courses.borrow().iter() {
             if course.course_type == course_type && course.beginning == beginning {
-                write!(file, "{}", StudentPrinter(&course.participants.borrow()));
+                write!(file, "{}", StudentPrinter(&course.participants.borrow()))?;
             }
         }
         //print!("    ");
     }
-    writeln!(file, "");
+    writeln!(file, "")?;
+    Ok(())
 }
 
-fn generate_output<'a, T: Write>(file: &mut T, weeks: &'a Vec<Week>) {
+///takes in the data, formats it so that it is humanly readable and writes it to the given Writer
+fn generate_output<'a, T: Write>(file: &mut T, weeks: &'a Vec<Week>) -> Result<(), io::Error> {
     for current_week in weeks {
-        writeln!(file, "KW {}", current_week.number);
-        writeln!(file, "               Montag                                    Dienstag                                  Mittwoch                                  Donnerstag                                Freitag");
-        print_course(file, &current_week, CourseType::Curriculum, 7);
-        print_course(file, &current_week, CourseType::Exkurs, 7);
-        print_course(file, &current_week, CourseType::Zahnerhalt, 7);
-        print_course(file, &current_week, CourseType::Zahnerhalt, 16);
-        print_course(file, &current_week, CourseType::Zahnersatz, 7);
-        print_course(file, &current_week, CourseType::Zahnersatz, 16);
-        writeln!(file, "");
-        writeln!(file, "");
+        writeln!(file, "KW {}", current_week.number)?;
+        writeln!(file, "               Montag                                    Dienstag                                  Mittwoch                                  Donnerstag                                Freitag")?;
+        print_course(file, &current_week, CourseType::Curriculum, 7)?;
+        print_course(file, &current_week, CourseType::Exkurs, 7)?;
+        print_course(file, &current_week, CourseType::Zahnerhalt, 7)?;
+        print_course(file, &current_week, CourseType::Zahnerhalt, 16)?;
+        print_course(file, &current_week, CourseType::Zahnersatz, 7)?;
+        print_course(file, &current_week, CourseType::Zahnersatz, 16)?;
+        writeln!(file, "")?;
+        writeln!(file, "")?;
     }
+    Ok(())
 }
 
+/// The MAIN function... very important
 fn main() {
     println!("---start---");
     let input = parse();
@@ -239,6 +255,8 @@ fn main() {
         ),
         Ok(file) => file,
     };
-    generate_output(&mut file, &weeks);
-    generate_output(&mut std::io::stdout(), &weeks);
+    let _ = generate_output(&mut std::io::stdout(), &weeks);
+    if let Err(err) = generate_output(&mut file, &weeks) {
+        println!("Unable to write output to file: {}", err.description());
+    }
 }

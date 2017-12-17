@@ -19,7 +19,8 @@ use std::fmt;
 use std::rc::Rc;
 use std::ops::Deref;
 
-
+/// returns true is one of the group members already has an appointment at the same
+/// time of the given course
 impl<'a, 'b> Occupation<'a> for Group {
     fn is_occupied(&self, course: &Course, day: &Day) -> bool {
         for student in self.participants.borrow().clone() {
@@ -31,6 +32,8 @@ impl<'a, 'b> Occupation<'a> for Group {
     }
 }
 
+/// returns true this student already has an appointment at the same
+/// time of the given course
 impl<'a> Occupation<'a> for Student {
     fn is_occupied(&self, course: &Course, day: &Day) -> bool {
         for ref course in day.courses
@@ -49,6 +52,7 @@ impl<'a> Occupation<'a> for Student {
     }
 }
 
+/// You will get whats going on there if you look at the source O.O
 impl fmt::Display for CourseType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -60,6 +64,8 @@ impl fmt::Display for CourseType {
     }
 }
 
+/// Prints the number of the student followed by a colon. Adds whitespace, so that
+/// there will be alway 3 chars printed.
 impl fmt::Display for Student {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = Ok(());
@@ -73,6 +79,8 @@ impl fmt::Display for Student {
     }
 }
 
+/// Prints exactly 15 students of the group, groups with less students will be filled
+/// with whitespace.
 impl<'a> fmt::Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = Ok(());
@@ -92,6 +100,8 @@ impl<'a> fmt::Display for Group {
     }
 }
 
+/// Prints exactly 15 list of the group, groups with less students will be filled
+/// with whitespace.
 impl<'a> fmt::Display for StudentPrinter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = Ok(());

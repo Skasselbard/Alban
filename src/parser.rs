@@ -26,6 +26,7 @@ use serde_json::error::Category;
 
 use types::*;
 
+/// Parses "input.json" in the current working directory and reports possible errors on std out
 pub fn parse() -> JsonData {
     match File::open("./input.json") {
         Err(error) => {
@@ -37,7 +38,7 @@ pub fn parse() -> JsonData {
                 println!("line: {}, column {}", error.line(), error.column());
                 match error.classify() {
                     Category::Io => {println!("IOError: unable to read stream")}
-                    Category::Syntax => {println!("SyntaxError: file has malformed JSON. Did you miss or add brackets, collons etc?")}
+                    Category::Syntax => {println!("SyntaxError: file has malformed JSON. Did you miss or add brackets, colons etc?")}
                     Category::Data => {println!("DataError: parsed type does not match the expected type. Did you miss or add \"'s or confused arrays and objects?\nIf this error occurs on the last line, you might have misspelled a key?")}
                     Category::Eof => {println!("EOFError: premature end of file")}
                 }
@@ -48,6 +49,10 @@ pub fn parse() -> JsonData {
     }
 }
 
+/// Generates all weeks and its children.
+/// Every day gets all courses unless it is a parsed holiday. Then it gets no course.
+/// Additionally in a week with at least one holiday, there will be no Curriculum course.
+/// all courses will have an empty list of participants assigned to them.
 pub fn get_weeks(parsed_data: &JsonData) -> Vec<Week> {
     let mut weeks = Vec::with_capacity(20);
     let start = parsed_data.wochen.kwAnfang;
@@ -144,6 +149,8 @@ pub fn get_weeks(parsed_data: &JsonData) -> Vec<Week> {
     weeks
 }
 
+/// Generates the list of students (a consecutive list of numbers, because there is
+/// nothing more of importance to a student)
 pub fn get_students<'a>(parsed_data: &JsonData) -> LinkedList<Rc<Student>> {
     let student_count = parsed_data.studentenAnzahl + 1;
     let mut students = LinkedList::new();
@@ -154,6 +161,7 @@ pub fn get_students<'a>(parsed_data: &JsonData) -> LinkedList<Rc<Student>> {
     students
 }
 
+/// parse and generate
 pub fn get_curriculum_groups<'a>(
     parsed_data: &JsonData,
     students: &LinkedList<Rc<Student>>,
@@ -181,6 +189,7 @@ pub fn get_curriculum_groups<'a>(
     groups
 }
 
+/// parse and generate
 pub fn get_exkurs_groups<'a>(
     parsed_data: &JsonData,
     students: &LinkedList<Rc<Student>>,
@@ -208,6 +217,7 @@ pub fn get_exkurs_groups<'a>(
     groups
 }
 
+/// parse and generate
 pub fn get_zahnersatz_groups<'a>(
     students: &LinkedList<Rc<Student>>,
 ) -> (LinkedList<Group>, LinkedList<Group>) {
@@ -233,6 +243,7 @@ pub fn get_zahnersatz_groups<'a>(
     (first_half, second_half)
 }
 
+/// parse and generate
 pub fn get_zahnerhalt_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedList<Group> {
     let mut groups = LinkedList::new();
     for student in students.iter() {
@@ -249,10 +260,12 @@ pub fn get_zahnerhalt_groups<'a>(students: &LinkedList<Rc<Student>>) -> LinkedLi
     groups
 }
 
+/// given by the client (available work stations)
 pub fn get_zahnerhalt_seat_count() -> u8 {
     11
 }
 
+/// given by the client (available work stations)
 pub fn get_zahnersatz_seat_count() -> u8 {
     10
 }

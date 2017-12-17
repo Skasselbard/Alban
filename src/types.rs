@@ -63,6 +63,8 @@ pub trait Occupation<'a> {
     fn is_occupied(&self, course: &Course, day: &Day) -> bool;
 }
 
+///////////////////////////////////////////////////
+//Types for Json (de)serialization
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(non_snake_case)]
 pub struct JsonData {
