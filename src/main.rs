@@ -25,6 +25,10 @@ mod implementations;
 mod parser;
 
 use std::collections::LinkedList;
+use std::fs::File;
+use std::io::Write;
+use std::error::Error;
+
 use types::*;
 use parser::*;
 
@@ -144,32 +148,32 @@ fn distribute_courses<'a, 'b>(
     }
 }
 
-fn print_course(week: &Week, course_type: CourseType, beginning: u8) {
-    print!("{} {}   ", course_type, beginning);
+fn print_course<T: Write>(file: &mut T, week: &Week, course_type: CourseType, beginning: u8) {
+    write!(file, "{} {}   ", course_type, beginning);
     for day_index in 0..5 {
         let current_day = &week.days[day_index];
         for course in current_day.courses.borrow().iter() {
             if course.course_type == course_type && course.beginning == beginning {
-                print!("{}", StudentPrinter(&course.participants.borrow()));
+                write!(file, "{}", StudentPrinter(&course.participants.borrow()));
             }
         }
         //print!("    ");
     }
-    println!("");
+    writeln!(file, "");
 }
 
-fn generate_output<'a>(weeks: &'a Vec<Week>) {
+fn generate_output<'a, T: Write>(file: &mut T, weeks: &'a Vec<Week>) {
     for current_week in weeks {
-        println!("KW {}", current_week.number);
-        println!("               Montag                                    Dienstag                                  Mittwoch                                  Donnerstag                                Freitag");
-        print_course(&current_week, CourseType::Curriculum, 7);
-        print_course(&current_week, CourseType::Exkurs, 7);
-        print_course(&current_week, CourseType::Zahnerhalt, 7);
-        print_course(&current_week, CourseType::Zahnerhalt, 16);
-        print_course(&current_week, CourseType::Zahnersatz, 7);
-        print_course(&current_week, CourseType::Zahnersatz, 16);
-        println!("");
-        println!("");
+        writeln!(file, "KW {}", current_week.number);
+        writeln!(file, "               Montag                                    Dienstag                                  Mittwoch                                  Donnerstag                                Freitag");
+        print_course(file, &current_week, CourseType::Curriculum, 7);
+        print_course(file, &current_week, CourseType::Exkurs, 7);
+        print_course(file, &current_week, CourseType::Zahnerhalt, 7);
+        print_course(file, &current_week, CourseType::Zahnerhalt, 16);
+        print_course(file, &current_week, CourseType::Zahnersatz, 7);
+        print_course(file, &current_week, CourseType::Zahnersatz, 16);
+        writeln!(file, "");
+        writeln!(file, "");
     }
 }
 
@@ -227,5 +231,14 @@ fn main() {
             distribute_courses(CourseType::Zahnerhalt, current_day, &mut zahnerhalt_groups);
         }
     }
-    generate_output(&weeks);
+    let mut file = match File::create("Alban says.txt") {
+        Err(why) => panic!(
+            "couldn't create {}: {}",
+            "Alban says.txt",
+            why.description()
+        ),
+        Ok(file) => file,
+    };
+    generate_output(&mut file, &weeks);
+    generate_output(&mut std::io::stdout(), &weeks);
 }
