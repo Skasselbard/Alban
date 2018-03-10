@@ -92,63 +92,57 @@ fn distribute_courses<'a, 'b>(
         match course_type {
             CourseType::Curriculum => {
                 let courses = day.courses.borrow();
-                let course = courses
+                if let Some(course) = courses
                     .iter()
                     .find(|ref course| course.course_type == CourseType::Curriculum)
-                    .unwrap();
-                distribute_course(&course, day, participants, 1);
+                {
+                    distribute_course(&course, day, participants, 1);
+                }
             }
             CourseType::Exkurs => {
                 let courses = day.courses.borrow();
-                let course = courses
+                if let Some(course) = courses
                     .iter()
                     .find(|ref course| course.course_type == CourseType::Exkurs)
-                    .unwrap();
-                distribute_course(&course, day, participants, 1);
+                {
+                    distribute_course(&course, day, participants, 1);
+                }
             }
             CourseType::Zahnersatz => {
                 let courses = day.courses.borrow();
-                let course = courses
-                    .iter()
-                    .find(|ref course| {
-                        course.course_type == CourseType::Zahnersatz && course.beginning == 7
-                    })
-                    .unwrap();
-                distribute_course(
-                    &course,
-                    day,
-                    participants,
-                    (get_zahnersatz_seat_count() / 2 as u8),
-                );
-                let course = courses
-                    .iter()
-                    .find(|ref course| {
-                        course.course_type == CourseType::Zahnersatz && course.beginning == 16
-                    })
-                    .unwrap();
-                distribute_course(
-                    &course,
-                    day,
-                    participants,
-                    (get_zahnersatz_seat_count() / 2 as u8),
-                );
+                if let Some(course) = courses.iter().find(|ref course| {
+                    course.course_type == CourseType::Zahnersatz && course.beginning == 7
+                }) {
+                    distribute_course(
+                        &course,
+                        day,
+                        participants,
+                        (get_zahnersatz_seat_count() / 2 as u8),
+                    );
+                }
+                if let Some(course) = courses.iter().find(|ref course| {
+                    course.course_type == CourseType::Zahnersatz && course.beginning == 16
+                }) {
+                    distribute_course(
+                        &course,
+                        day,
+                        participants,
+                        (get_zahnersatz_seat_count() / 2 as u8),
+                    );
+                }
             }
             CourseType::Zahnerhalt => {
                 let courses = day.courses.borrow();
-                let course = courses
-                    .iter()
-                    .find(|ref course| {
-                        course.course_type == CourseType::Zahnerhalt && course.beginning == 7
-                    })
-                    .unwrap();
-                distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
-                let course = courses
-                    .iter()
-                    .find(|ref course| {
-                        course.course_type == CourseType::Zahnerhalt && course.beginning == 16
-                    })
-                    .unwrap();
-                distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
+                if let Some(course) = courses.iter().find(|ref course| {
+                    course.course_type == CourseType::Zahnerhalt && course.beginning == 7
+                }) {
+                    distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
+                }
+                if let Some(course) = courses.iter().find(|ref course| {
+                    course.course_type == CourseType::Zahnerhalt && course.beginning == 16
+                }) {
+                    distribute_course(&course, day, participants, get_zahnerhalt_seat_count());
+                }
             }
         }
     }
