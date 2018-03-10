@@ -34,7 +34,6 @@ use std::result::Result;
 use types::*;
 use parser::*;
 
-
 /// returns true if an entry exists for the given course type in the given day
 fn course_is_today(course_type: CourseType, day: &Day) -> bool {
     day.courses
@@ -164,12 +163,15 @@ fn print_course<T: Write>(
     write!(file, "{} {}   ", course_type, beginning)?;
     for day_index in 0..5 {
         let current_day = &week.days[day_index];
-        for course in current_day.courses.borrow().iter() {
-            if course.course_type == course_type && course.beginning == beginning {
-                write!(file, "{}", StudentPrinter(&course.participants.borrow()))?;
-            }
+
+        if let Some(course) =
+            current_day.courses.borrow().iter().find(|ref course| {
+                course.course_type == course_type && course.beginning == beginning
+            }) {
+            write!(file, "{}", StudentPrinter(&course.participants.borrow()))?;
+        } else {
+            write!(file, "{}", StudentPrinter(&LinkedList::new()))?;
         }
-        //print!("    ");
     }
     writeln!(file, "")?;
     Ok(())
@@ -200,6 +202,7 @@ fn main() {
     println!("{}", serde_json::to_string_pretty(&input).unwrap());
     let weeks = get_weeks(&input);
     println!("---parsed weeks---",);
+    //println!("{:#?}", weeks);
     let students = get_students(&input);
     println!("---parsed students---",);
     for student in students.iter() {
