@@ -20,9 +20,13 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+#[macro_use]
+extern crate conrod;
+
 mod types;
 mod implementations;
 mod parser;
+mod gui;
 
 use std::collections::LinkedList;
 use std::fs::File;
@@ -33,7 +37,6 @@ use std::result::Result;
 
 use types::*;
 use parser::*;
-
 
 /// returns true if an entry exists for the given course type in the given day
 fn course_is_today(course_type: CourseType, day: &Day) -> bool {
@@ -194,6 +197,7 @@ fn generate_output<'a, T: Write>(file: &mut T, weeks: &'a Vec<Week>) -> Result<(
 
 /// The MAIN function... very important
 fn main() {
+    //gui::main();
     println!("---start---");
     let input = parse();
     println!("---parsed json file---");
