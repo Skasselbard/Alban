@@ -16,7 +16,6 @@
 
 extern crate serde_json;
 
-
 use std::collections::LinkedList;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -25,6 +24,20 @@ use std::error::Error;
 use serde_json::error::Category;
 
 use types::*;
+
+macro_rules! push_course {
+    (
+        $beginning:expr,
+        $course_type:expr,
+        $courses:expr
+    ) => (
+        $courses.push_back(Course {
+        beginning: $beginning,
+        course_type: $course_type,
+        participants: RefCell::new(LinkedList::new()),
+        });
+    );
+}
 
 /// Parses "input.json" in the current working directory and reports possible errors on std out
 pub fn parse() -> JsonData {
@@ -61,80 +74,27 @@ pub fn get_weeks(parsed_data: &JsonData) -> Vec<Week> {
     if start > end {
         panic!("first week is after the last week");
     }
-    for i in start..end {
+    for week_index in start..end {
         let week = Week {
-            number: i,
+            number: week_index,
             days: {
                 let mut ret: [Day; 5] = Default::default();
-                for j in 0..5 {
-                    ret[j] = Day {
+                for day_index in 0..5 {
+                    ret[day_index] = Day {
                         courses: {
                             RefCell::new({
                                 let mut courses = LinkedList::new();
-                                if let Some(entry) = parsed_feiertags
-                                    .iter()
-                                    .find(|&feiertag_entry| feiertag_entry.woche == i as u64)
-                                {
+                                if let Some(entry) = parsed_feiertags.iter().find(
+                                    |&feiertag_entry| feiertag_entry.woche == week_index as u64,
+                                ) {
                                     if let None =
-                                        entry.tage.iter().find(|&&day| day - 1 == j as u64)
+                                        entry.tage.iter().find(|&&day| day - 1 == day_index as u64)
                                     {
-                                        courses.push_back(Course {
-                                            beginning: 7,
-                                            course_type: CourseType::Exkurs,
-                                            participants: RefCell::new(LinkedList::new()),
-                                        });
-                                        courses.push_back(Course {
-                                            beginning: 7,
-                                            course_type: CourseType::Zahnerhalt,
-                                            participants: RefCell::new(LinkedList::new()),
-                                        });
-                                        courses.push_back(Course {
-                                            beginning: 7,
-                                            course_type: CourseType::Zahnersatz,
-                                            participants: RefCell::new(LinkedList::new()),
-                                        });
-                                        courses.push_back(Course {
-                                            beginning: 16,
-                                            course_type: CourseType::Zahnerhalt,
-                                            participants: RefCell::new(LinkedList::new()),
-                                        });
-                                        courses.push_back(Course {
-                                            beginning: 16,
-                                            course_type: CourseType::Zahnersatz,
-                                            participants: RefCell::new(LinkedList::new()),
-                                        });
+                                        push_courses(&mut courses, day_index);
                                     }
                                 } else {
-                                    courses.push_back(Course {
-                                        beginning: 7,
-                                        course_type: CourseType::Curriculum,
-                                        participants: RefCell::new(LinkedList::new()),
-                                    });
-                                    courses.push_back(Course {
-                                        beginning: 7,
-                                        course_type: CourseType::Exkurs,
-                                        participants: RefCell::new(LinkedList::new()),
-                                    });
-                                    courses.push_back(Course {
-                                        beginning: 7,
-                                        course_type: CourseType::Zahnerhalt,
-                                        participants: RefCell::new(LinkedList::new()),
-                                    });
-                                    courses.push_back(Course {
-                                        beginning: 7,
-                                        course_type: CourseType::Zahnersatz,
-                                        participants: RefCell::new(LinkedList::new()),
-                                    });
-                                    courses.push_back(Course {
-                                        beginning: 16,
-                                        course_type: CourseType::Zahnerhalt,
-                                        participants: RefCell::new(LinkedList::new()),
-                                    });
-                                    courses.push_back(Course {
-                                        beginning: 16,
-                                        course_type: CourseType::Zahnersatz,
-                                        participants: RefCell::new(LinkedList::new()),
-                                    });
+                                    push_course!(7, CourseType::Curriculum, courses);
+                                    push_courses(&mut courses, day_index);
                                 }
                                 courses
                             })
@@ -147,6 +107,22 @@ pub fn get_weeks(parsed_data: &JsonData) -> Vec<Week> {
         weeks.push(week);
     }
     weeks
+}
+
+fn push_courses(courses: &mut LinkedList<Course>, day_index: usize) {
+    push_course!(7, CourseType::Exkurs, courses);
+    if day_index != 4 {
+        push_course!(7, CourseType::Zahnerhalt, courses);
+    }
+    if day_index == 2 {
+        push_course!(16, CourseType::Zahnerhalt, courses);
+    }
+    if day_index != 2 {
+        push_course!(7, CourseType::Zahnersatz, courses);
+    }
+    if day_index == 4 {
+        push_course!(16, CourseType::Zahnersatz, courses);
+    }
 }
 
 /// Generates the list of students (a consecutive list of numbers, because there is
