@@ -194,7 +194,7 @@ fn generate_output<'a, T: Write>(file: &mut T, weeks: &'a Vec<Week>) -> Result<(
 
 /// The MAIN function... very important
 fn main() {
-    //gui::main();
+    gui::main();
     println!("---start---");
     let input = parse();
     println!("---parsed json file---");
